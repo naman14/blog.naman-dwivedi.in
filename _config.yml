@@ -7,7 +7,7 @@ relative_permalinks: true
 # Setup
 title:               Naman Dwivedi
 tagline:             naman14
-url:                 http://naman-dwivedi.in
+url:                 http://blog.naman-dwivedi.in
 paginate:            5
 avatar:              http://naman-dwivedi.in/images/naman.jpg
 
