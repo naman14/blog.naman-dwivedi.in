@@ -4,7 +4,7 @@
  <title>Naman Dwivedi</title>
  <link href="http://localhost:4000//atom.xml" rel="self"/>
  <link href="http://localhost:4000/"/>
- <updated>2020-04-13T22:49:29+05:30</updated>
+ <updated>2020-04-13T23:47:32+05:30</updated>
  <id>http://localhost:4000</id>
  <author>
    <name>Naman Dwivedi</name>
@@ -17,7 +17,7 @@
    <link href="http://localhost:4000///building-apks-slack"/>
    <updated>2020-04-13T00:00:00+05:30</updated>
    <id>http://localhost:4000/Building APKs from Slack and CircleCI</id>
-   <content type="html">&lt;p&gt;For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone from can trigger the build from Slack for a branch and build variant.&lt;/p&gt;
+   <content type="html">&lt;p&gt;For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone can trigger the build from Slack for a branch and build variant.&lt;/p&gt;
 
 &lt;hr /&gt;
 
@@ -56,7 +56,7 @@
 
 &lt;p&gt;Note that there are some issues in firebase cloud function working with unescaped characters due to which we are avoiding using space in the slash command. We can use pipe &lt;code class=&quot;highlighter-rouge&quot;&gt;|&lt;/code&gt; as the separator for build variant and branch name as branch names can often have &lt;code class=&quot;highlighter-rouge&quot;&gt;/&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;-&lt;/code&gt;.&lt;/p&gt;
 
-&lt;p&gt;One thing to note here is that Slack expects a response within 300ms after executing slash command or else it will show &lt;code class=&quot;highlighter-rouge&quot;&gt;operation_tiemout&lt;/code&gt; error. Initialising the function might takes more than 300ms and then waiting for Circle ci api trigger response will certaintly cross 300ms time limit. To work around this, we write the response instantly &lt;code class=&quot;highlighter-rouge&quot;&gt;response.write()&lt;/code&gt; and then trigger the Circle CI API in response of which we finally end the response. Note that if you instantly end the response with &lt;code class=&quot;highlighter-rouge&quot;&gt;res.end()&lt;/code&gt; the cloud function will terminate soon after so we can’t do &lt;code class=&quot;highlighter-rouge&quot;&gt;response.send()&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;response.end()&lt;/code&gt;
+&lt;p&gt;One thing to note here is that Slack expects a response within 300ms after executing slash command or else it will show &lt;code class=&quot;highlighter-rouge&quot;&gt;operation_tiemout&lt;/code&gt; error. Initialising the function might take more than 300ms and then waiting for Circle CI api trigger response will certaintly cross 300ms time limit. To work around this, we write the response instantly using &lt;code class=&quot;highlighter-rouge&quot;&gt;response.write()&lt;/code&gt; and then trigger the Circle CI API in response of which we finally end the response. Note that if you instantly end the response with &lt;code class=&quot;highlighter-rouge&quot;&gt;res.end()&lt;/code&gt; the cloud function will terminate soon after so we can’t do &lt;code class=&quot;highlighter-rouge&quot;&gt;response.send()&lt;/code&gt; or &lt;code class=&quot;highlighter-rouge&quot;&gt;response.end()&lt;/code&gt;
 before the circle ci api trigger is complete.&lt;/p&gt;
 
 &lt;p&gt;Also see Circle CI- &lt;a href=&quot;https://circleci.com/docs/2.0/api-job-trigger/&quot;&gt;Using the API to trigger jobs&lt;/a&gt;&lt;/p&gt;

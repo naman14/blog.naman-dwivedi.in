@@ -4,6 +4,8 @@ title: Building APKs from Slack using Circle CI and Firebase cloud functions
 comments: true
 related: false
 permalink: building-apks-slack
+author: Naman Dwivedi
+image: /assets/slack_slash_command.png
 excerpt: For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone can trigger the build from Slack for a branch and build variant.  
 ---
 For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone can trigger the build from Slack for a branch and build variant.  
