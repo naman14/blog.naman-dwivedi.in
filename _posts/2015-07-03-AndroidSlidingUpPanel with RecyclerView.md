@@ -246,7 +246,7 @@ public boolean dispatchTouchEvent(MotionEvent ev) {
    I also made a quick gist of modified `SlidingUpPanelLayout.java` -[https://gist.github.com/naman14/35d899ab45bf3ce836a8](https://gist.github.com/naman14/35d899ab45bf3ce836a8)
 
    --------
-   >####Update
+   >#### Update
    >As of version 3.1.0 released on 19 July,AndroidSlidingUpPanel has added
    >`scrollableView` to support nested scrolling in children
    >but only scrollview and listview are supported for now.

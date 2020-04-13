@@ -1,9 +1,9 @@
 # Setup
 title:               Naman Dwivedi
 tagline:             naman14
-url:                 http://blog.naman-dwivedi.in
+url:                 https://blog.namand.in
 paginate:            5
-avatar:              http://naman-dwivedi.in/images/naman.jpg
+avatar:              https://namand.in/images/naman.jpg
 
 # Assets
 #
@@ -17,7 +17,7 @@ author:
   name:              Naman Dwivedi
   url:               https://github.com/naman14
   email:             namandwivedi14@gmail.com
-  tagline:             naman14
+  tagline:           naman14
 
 # Custom vars
 version:             1.0.0
@@ -25,4 +25,3 @@ github:
   repo:              https://github.com/naman14/naman14.github.io
 
 # This is the list of pages to incldue in the header of the website.
-pages_list:       {'About':'/about','Archive':'/archive'}

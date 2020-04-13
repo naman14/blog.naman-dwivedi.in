@@ -2,6 +2,16 @@
 <html lang="en">
 
   <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60857131-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-60857131-4');
+</script>
+
   <meta charset="UTF-8">
   <link href="http://gmpg.org/xfn/11" rel="profile">
 
@@ -20,16 +30,7 @@
 
   <!-- RSS -->
   <link rel="alternate" type="application/atom+xml" title="Naman Dwivedi" href="/atom.xml">
-      <script>
-          (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-           (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-           m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-           })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-           
-           ga('create', 'UA-60857131-1', 'auto');
-           ga('send', 'pageview');
-           
-          </script>
+
 </head>
 
 
@@ -37,115 +38,122 @@
     <div class="wrapper-masthead">
         <div class="container">
             <header class="masthead clearfix">
-                
+
                 <div class="site-info">
-                    <h1 class="site-name"><a href="http://naman-dwivedi.in/">Naman Dwivedi</a></h1>
+                    <h1 class="site-name"><a href="https://namand.in">Naman Dwivedi</a></h1>
                     <p class="site-description">naman14</p>
                 </div>
                 
                 <nav>
-                    <a href="http://naman-dwivedi.in/">Blog</a>
-                    <a href="http://naman-dwivedi.in/archive">Archive</a>
-                    <a href="http://naman-dwivedi.in/about">About</a>
-                    <a href="http://naman-dwivedi.in/projects">Projects</a>
+                    <a href="https://namand.in">Home</a>
+                    <a href="https://blog.namand.in">Blog</a>
                 </nav>
             </header>
         </div>
     </div>
-    
+
     <div id="main" role="main" class="container">
         <article class="post">
   <h1 class="post-title">AndroidSlidingUpPanel with RecyclerView</h1>
   <time datetime="2015-07-03T00:00:00+05:30" class="post-date">03 Jul 2015</time>
-  <p>Recently,I was working on the <a href="http://chestream.com">Chestream</a> Android app and as it turns out, AndroidSlidingUpPanel doesn’t play well with scrolling contents and since we were using RecyclerView inside SlidingPanelLayout, there were some conflicts between the srcolling intercepting of slidingpanel and recyclerview.The problem was that when scrolling inside the recyclerview,it did not scroll instead the panel starts sliding.However for some reason,if scrolled very slowly recyclerview did started scrolling but it was bad user experience.The problem is justified as panel is supposed to slide if it is dragged.There is also a method <code>setDragView</code> in SlidingPanelLayout by which we can restrict the views from where only the panel can be dragged but unfortunately that doesn’t seem to work and even if it works,it isn’t the perfect solution to the problem as then the user wouldn’t be able to drag the panel from the whole recyclerview.</p>
+  <p>Recently,I was working on the <a href="http://chestream.com">Chestream</a> Android app and as it turns out, AndroidSlidingUpPanel doesn’t play well with scrolling contents and since we were using RecyclerView inside SlidingPanelLayout, there were some conflicts between the srcolling intercepting of slidingpanel and recyclerview.The problem was that when scrolling inside the recyclerview,it did not scroll instead the panel starts sliding.However for some reason,if scrolled very slowly recyclerview did started scrolling but it was bad user experience.The problem is justified as panel is supposed to slide if it is dragged.There is also a method <code class="highlighter-rouge">setDragView</code> in SlidingPanelLayout by which we can restrict the views from where only the panel can be dragged but unfortunately that doesn’t seem to work and even if it works,it isn’t the perfect solution to the problem as then the user wouldn’t be able to drag the panel from the whole recyclerview.</p>
 
 <p>The ideal solution to this should be that the user will be able to scroll the recyclerview as long as it is scrollable and when the top item of recyclerview is reached,the panel should start sliding.We will see how to implement such functionality with AndroidSlidingUpPanel.This should work on ScrollViews and ListViews also.</p>
 
-<p>On first look,it would seem to override the <code>onInterceptTouchEvent</code> in SlidingUpPanelLayout to implement your custom implementation (And what most of the stackoverflow answers relating to this suggest) but unfortunately this wouldn’t work in our case as once the child view’s <code>onTouchEvent</code> returns <code>true</code>,<code>onInterceptTouchEvent</code> would no longer be called.So our first step would be to remove <code>onInterceptTouchEvent</code> method completely.</p>
+<p>On first look,it would seem to override the <code class="highlighter-rouge">onInterceptTouchEvent</code> in SlidingUpPanelLayout to implement your custom implementation (And what most of the stackoverflow answers relating to this suggest) but unfortunately this wouldn’t work in our case as once the child view’s <code class="highlighter-rouge">onTouchEvent</code> returns <code class="highlighter-rouge">true</code>,<code class="highlighter-rouge">onInterceptTouchEvent</code> would no longer be called.So our first step would be to remove <code class="highlighter-rouge">onInterceptTouchEvent</code> method completely.</p>
 
-<p>Add these variables to <code>SlidingUpPanelLayout.java</code></p>
+<p>Add these variables to <code class="highlighter-rouge">SlidingUpPanelLayout.java</code></p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">View</span> <span class="n">mScrollingView</span><span class="o">;</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="nc">View</span> <span class="n">mScrollingView</span><span class="o">;</span>
 <span class="kt">boolean</span> <span class="n">isChildHandlingTouch</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
 <span class="kt">float</span> <span class="n">mPrevMotionX</span><span class="o">;</span>
-<span class="kt">float</span> <span class="n">mPrevMotionY</span><span class="o">;</span></code></pre></div>
+<span class="kt">float</span> <span class="n">mPrevMotionY</span><span class="o">;</span></code></pre></figure>
 
 <p>Next up is to give SlidingUpPanelLayout the reference to our RecyclerView.
-Add this method to <code>SlidingUpPanelLayout.java</code>-</p>
+Add this method to <code class="highlighter-rouge">SlidingUpPanelLayout.java</code>-</p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">setScrollingView</span><span class="o">(</span><span class="n">View</span> <span class="n">scrollingView</span><span class="o">)</span> <span class="o">{</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">public</span> <span class="kt">void</span> <span class="nf">setScrollingView</span><span class="o">(</span><span class="nc">View</span> <span class="n">scrollingView</span><span class="o">)</span> <span class="o">{</span>
     <span class="n">mScrollingView</span> <span class="o">=</span> <span class="n">scrollingView</span><span class="o">;</span>
-<span class="o">}</span></code></pre></div>
+<span class="o">}</span></code></pre></figure>
 
 <p>Next step is to determine if our RecyclerView is still scrolling or has reached the top item and its time to hand over scrolling to SlidingPanelLayout. It took me some time to find it but LayoutManager of RecyclerView has a direct method to get the position of the first visible item on the screen. Similarly,ListView and ScrollView also has such methods to get the scrolling position.</p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">isChildScrolling</span><span class="o">()</span> <span class="o">{</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">isChildScrolling</span><span class="o">()</span> <span class="o">{</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
         <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
 
-    <span class="c1">//for recyclerview  </span>
-    <span class="k">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="k">instanceof</span> <span class="n">RecyclerView</span><span class="o">)</span> <span class="o">{</span>
-          <span class="n">RecyclerView</span> <span class="n">rv</span> <span class="o">=</span> <span class="o">(</span><span class="n">RecyclerView</span><span class="o">)</span> <span class="n">mScrollingView</span><span class="o">;</span>
+    <span class="c1">//for recyclerview  
+</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="k">instanceof</span> <span class="nc">RecyclerView</span><span class="o">)</span> <span class="o">{</span>
+          <span class="nc">RecyclerView</span> <span class="n">rv</span> <span class="o">=</span> <span class="o">(</span><span class="nc">RecyclerView</span><span class="o">)</span> <span class="n">mScrollingView</span><span class="o">;</span>
 
-           <span class="n">LinearLayoutManager</span> <span class="n">layoutManager</span> <span class="o">=</span> <span class="o">((</span><span class="n">LinearLayoutManager</span><span class="o">)</span> <span class="n">rv</span><span class="o">.</span><span class="na">getLayoutManager</span><span class="o">());</span>
+           <span class="nc">LinearLayoutManager</span> <span class="n">layoutManager</span> <span class="o">=</span> <span class="o">((</span><span class="nc">LinearLayoutManager</span><span class="o">)</span> <span class="n">rv</span><span class="o">.</span><span class="na">getLayoutManager</span><span class="o">());</span>
            <span class="kt">int</span> <span class="n">firstVisiblePosition</span> <span class="o">=</span> <span class="n">layoutManager</span><span class="o">.</span><span class="na">findFirstVisibleItemPosition</span><span class="o">();</span>
 
             <span class="k">if</span> <span class="o">(</span><span class="n">firstVisiblePosition</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span>
                 <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
 
-    <span class="c1">//findFirstVisibleItemPosition returns the position even if 1dp of the item view is visible</span>
-    <span class="c1">//so if even some of the first item view is visible firstVisiblePosition&gt;0 would be false</span>
-    <span class="c1">//however in that case the view can still scroll a little upto the actual height of the item.</span>
-    <span class="c1">//take care of that with below code</span>
-            <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="na">getChildAt</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+    <span class="c1">//findFirstVisibleItemPosition returns the position even if 1dp of the item view is visible
+</span>
+    <span class="c1">//so if even some of the first item view is visible firstVisiblePosition&gt;0 would be false
+</span>
+    <span class="c1">//however in that case the view can still scroll a little upto the actual height of the item.
+</span>
+    <span class="c1">//take care of that with below code
+</span>
+            <span class="nc">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">rv</span><span class="o">.</span><span class="na">getChildAt</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
             <span class="kt">int</span> <span class="n">top</span> <span class="o">=</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">:</span> <span class="o">(</span><span class="n">firstVisiblePosition</span> <span class="o">*</span> <span class="n">lv</span><span class="o">.</span><span class="na">getHeight</span><span class="o">()</span> <span class="o">-</span> <span class="n">v</span><span class="o">.</span><span class="na">getTop</span><span class="o">());</span>
             <span class="k">return</span> <span class="n">top</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">;</span>
         <span class="o">}</span>
 
-    <span class="c1">//haven&#39;t tested these but should work</span>
+    <span class="c1">//haven't tested these but should work
+</span>
 
-      <span class="c1">//for listview</span>
-    <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="k">instanceof</span> <span class="n">ListView</span><span class="o">)</span> <span class="o">{</span>
-        <span class="n">ListView</span> <span class="n">lv</span> <span class="o">=</span> <span class="o">(</span><span class="n">ListView</span><span class="o">)</span> <span class="n">mScrollingView</span><span class="o">;</span>
+      <span class="c1">//for listview
+</span>
+    <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="k">instanceof</span> <span class="nc">ListView</span><span class="o">)</span> <span class="o">{</span>
+        <span class="nc">ListView</span> <span class="n">lv</span> <span class="o">=</span> <span class="o">(</span><span class="nc">ListView</span><span class="o">)</span> <span class="n">mScrollingView</span><span class="o">;</span>
 
         <span class="k">if</span> <span class="o">(</span><span class="n">lv</span><span class="o">.</span><span class="na">getFirstVisiblePosition</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span>
             <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
 
-        <span class="n">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">lv</span><span class="o">.</span><span class="na">getChildAt</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
+        <span class="nc">View</span> <span class="n">v</span> <span class="o">=</span> <span class="n">lv</span><span class="o">.</span><span class="na">getChildAt</span><span class="o">(</span><span class="mi">0</span><span class="o">);</span>
         <span class="kt">int</span> <span class="n">top</span> <span class="o">=</span> <span class="o">(</span><span class="n">v</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">?</span> <span class="o">(</span><span class="mi">0</span><span class="o">)</span> <span class="o">:</span> <span class="o">(-</span><span class="n">v</span><span class="o">.</span><span class="na">getTop</span><span class="o">()</span> <span class="o">+</span> <span class="n">lv</span><span class="o">.</span><span class="na">getFirstVisiblePosition</span><span class="o">()</span> <span class="o">*</span> <span class="n">lv</span><span class="o">.</span><span class="na">getHeight</span><span class="o">());</span>
         <span class="k">return</span> <span class="n">top</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">;</span>
     <span class="o">}</span>
 
-    <span class="c1">//for scrollview</span>
-    <span class="k">else</span>  <span class="nf">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="k">instanceof</span> <span class="n">ScrollView</span><span class="o">)</span> <span class="o">{</span>
+    <span class="c1">//for scrollview
+</span>
+    <span class="k">else</span>  <span class="nf">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="k">instanceof</span> <span class="nc">ScrollView</span><span class="o">)</span> <span class="o">{</span>
           <span class="k">return</span> <span class="o">(</span><span class="n">mScrollingView</span><span class="o">.</span><span class="na">getScrollY</span><span class="o">()</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">);</span>
       <span class="o">}</span>
 
     <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
-<span class="o">}</span></code></pre></div>
+<span class="o">}</span></code></pre></figure>
 
-<p>Next modify the <code>onTouchEvent</code> of SlidingUpPanelLayout to the following-</p>
+<p>Next modify the <code class="highlighter-rouge">onTouchEvent</code> of SlidingUpPanelLayout to the following-</p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@Override</span>
-   <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">ev</span><span class="o">)</span> <span class="o">{</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@Override</span>
+   <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="nc">MotionEvent</span> <span class="n">ev</span><span class="o">)</span> <span class="o">{</span>
        <span class="k">if</span> <span class="o">(!</span><span class="n">isSlidingEnabled</span><span class="o">())</span> <span class="o">{</span>
            <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
        <span class="o">}</span>
 
            <span class="n">mDragHelper</span><span class="o">.</span><span class="na">processTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
 
-           <span class="c1">//add the following code</span>
+           <span class="c1">//add the following code
+</span>
            <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getAction</span><span class="o">();</span>
            <span class="kt">boolean</span> <span class="n">captureTouch</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
 
-           <span class="k">switch</span> <span class="o">(</span><span class="n">action</span> <span class="o">&amp;</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MASK</span><span class="o">)</span> <span class="o">{</span>
-               <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">:</span> <span class="o">{</span>
+           <span class="k">switch</span> <span class="o">(</span><span class="n">action</span> <span class="o">&amp;</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MASK</span><span class="o">)</span> <span class="o">{</span>
+               <span class="k">case</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">:</span> <span class="o">{</span>
                    <span class="kd">final</span> <span class="kt">float</span> <span class="n">x</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
                    <span class="kd">final</span> <span class="kt">float</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
                    <span class="kd">final</span> <span class="kt">float</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mInitialMotionX</span><span class="o">;</span>
                    <span class="kd">final</span> <span class="kt">float</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">mInitialMotionY</span><span class="o">;</span>
                    <span class="kd">final</span> <span class="kt">int</span> <span class="n">slop</span> <span class="o">=</span> <span class="n">mDragHelper</span><span class="o">.</span><span class="na">getTouchSlop</span><span class="o">();</span>
-                   <span class="n">View</span> <span class="n">dragView</span> <span class="o">=</span> <span class="n">mDragView</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">mDragView</span> <span class="o">:</span> <span class="n">mSlideableView</span><span class="o">;</span>
+                   <span class="nc">View</span> <span class="n">dragView</span> <span class="o">=</span> <span class="n">mDragView</span> <span class="o">!=</span> <span class="kc">null</span> <span class="o">?</span> <span class="n">mDragView</span> <span class="o">:</span> <span class="n">mSlideableView</span><span class="o">;</span>
 
                    <span class="k">if</span> <span class="o">(</span><span class="n">dx</span> <span class="o">*</span> <span class="n">dx</span> <span class="o">+</span> <span class="n">dy</span> <span class="o">*</span> <span class="n">dy</span> <span class="o">&lt;</span> <span class="n">slop</span> <span class="o">*</span> <span class="n">slop</span> <span class="o">&amp;&amp;</span>
                            <span class="n">isDragViewUnder</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span> <span class="n">x</span><span class="o">,</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">y</span><span class="o">)</span> <span class="o">&amp;&amp;</span>
@@ -164,11 +172,12 @@ Add this method to <code>SlidingUpPanelLayout.java</code>-</p>
 
            <span class="k">return</span> <span class="n">captureTouch</span><span class="o">;</span>
 
-   <span class="o">}</span></code></pre></div>
+   <span class="o">}</span>
+   </code></pre></figure>
 
-<p>Add the <code>isScrollingViewUnder</code> as follows (same as the <code>isDrageViewUnder</code> method)-</p>
+<p>Add the <code class="highlighter-rouge">isScrollingViewUnder</code> as follows (same as the <code class="highlighter-rouge">isDrageViewUnder</code> method)-</p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">isScrollingViewUnder</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">)</span> <span class="o">{</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">   <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">isScrollingViewUnder</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">)</span> <span class="o">{</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
         <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
 
@@ -182,23 +191,24 @@ Add this method to <code>SlidingUpPanelLayout.java</code>-</p>
            <span class="n">screenX</span> <span class="o">&lt;</span> <span class="n">viewLocation</span><span class="o">[</span><span class="mi">0</span><span class="o">]</span> <span class="o">+</span> <span class="n">mScrollingView</span><span class="o">.</span><span class="na">getWidth</span><span class="o">()</span> <span class="o">&amp;&amp;</span>
            <span class="n">screenY</span> <span class="o">&gt;=</span> <span class="n">viewLocation</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">&amp;&amp;</span>
            <span class="n">screenY</span> <span class="o">&lt;</span> <span class="n">viewLocation</span><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="o">+</span> <span class="n">mScrollingView</span><span class="o">.</span><span class="na">getHeight</span><span class="o">();</span>
-   <span class="o">}</span></code></pre></div>
+   <span class="o">}</span>
+   </code></pre></figure>
 
-<p>And then finally add the following <code>dispatchTouchEvent</code> method to identify if we want to handle the touch event.
-   We want to be able to handle the case where a child begins handling a touch event, but then the parent takes over. If we rely on <code>onInterceptTouchEvent</code>, we lose control of the touch as soon as the child handles the event.
+<p>And then finally add the following <code class="highlighter-rouge">dispatchTouchEvent</code> method to identify if we want to handle the touch event.
+   We want to be able to handle the case where a child begins handling a touch event, but then the parent takes over. If we rely on <code class="highlighter-rouge">onInterceptTouchEvent</code>, we lose control of the touch as soon as the child handles the event.
    (see <a href="http://stackoverflow.com/a/22490810/3316330">http://stackoverflow.com/a/22490810/3316330</a> for more details)</p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="nd">@Override</span>
-<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">ev</span><span class="o">)</span> <span class="o">{</span>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">   <span class="nd">@Override</span>
+<span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">dispatchTouchEvent</span><span class="o">(</span><span class="nc">MotionEvent</span> <span class="n">ev</span><span class="o">)</span> <span class="o">{</span>
     <span class="k">if</span> <span class="o">(</span><span class="n">mScrollingView</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span>
         <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
 
-    <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">getActionMasked</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
+    <span class="kd">final</span> <span class="kt">int</span> <span class="n">action</span> <span class="o">=</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">getActionMasked</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
 
     <span class="kd">final</span> <span class="kt">float</span> <span class="n">x</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
     <span class="kd">final</span> <span class="kt">float</span> <span class="n">y</span> <span class="o">=</span> <span class="n">ev</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
 
-    <span class="k">if</span> <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">if</span> <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">)</span> <span class="o">{</span>
 
         <span class="n">mDragHelper</span><span class="o">.</span><span class="na">shouldInterceptTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
 
@@ -206,63 +216,76 @@ Add this method to <code>SlidingUpPanelLayout.java</code>-</p>
         <span class="n">mInitialMotionY</span> <span class="o">=</span> <span class="n">mPrevMotionY</span> <span class="o">=</span> <span class="n">y</span><span class="o">;</span>
 
         <span class="n">isChildHandlingTouch</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-    <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MOVE</span><span class="o">)</span> <span class="o">{</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MOVE</span><span class="o">)</span> <span class="o">{</span>
         <span class="kt">float</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mPrevMotionX</span><span class="o">;</span>
         <span class="kt">float</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">mPrevMotionY</span><span class="o">;</span>
         <span class="n">mPrevMotionX</span> <span class="o">=</span> <span class="n">x</span><span class="o">;</span>
         <span class="n">mPrevMotionY</span> <span class="o">=</span> <span class="n">y</span><span class="o">;</span>
 
-        <span class="c1">// If the scroll view isn&#39;t under the touch, pass the</span>
-        <span class="c1">// event along to the dragView.</span>
+        <span class="c1">// If the scroll view isn't under the touch, pass the
+</span>
+        <span class="c1">// event along to the dragView.
+</span>
         <span class="k">if</span> <span class="o">(!</span><span class="n">isScrollingViewUnder</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span> <span class="n">x</span><span class="o">,</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">y</span><span class="o">))</span>
             <span class="k">return</span> <span class="k">this</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
 
-        <span class="c1">// Dragging Down</span>
+        <span class="c1">// Dragging Down
+</span>
         <span class="k">if</span> <span class="o">(</span><span class="n">dy</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-            <span class="c1">// Is the child still scrolling?</span>
-            <span class="c1">// Then let the child handle it.</span>
+            <span class="c1">// Is the child still scrolling?
+</span>
+            <span class="c1">// Then let the child handle it.
+</span>
             <span class="k">if</span> <span class="o">(</span><span class="n">isChildScrolling</span><span class="o">())</span> <span class="o">{</span>
                 <span class="n">isChildHandlingTouch</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
                 <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
             <span class="o">}</span>
 
-            <span class="c1">// If the child was handling touch previously</span>
-            <span class="c1">// Then we need to rearrange things so that the sliding panel gets a proper down event.</span>
+            <span class="c1">// If the child was handling touch previously
+</span>
+            <span class="c1">// Then we need to rearrange things so that the sliding panel gets a proper down event.
+</span>
             <span class="k">if</span> <span class="o">(</span><span class="n">isChildHandlingTouch</span><span class="o">)</span> <span class="o">{</span>
-                <span class="c1">// Send an &#39;UP&#39; event to the child.</span>
-                <span class="n">MotionEvent</span> <span class="n">up</span> <span class="o">=</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">obtain</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
-                <span class="n">up</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">);</span>
+                <span class="c1">// Send an 'UP' event to the child.
+</span>
+                <span class="nc">MotionEvent</span> <span class="n">up</span> <span class="o">=</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">obtain</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
+                <span class="n">up</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">);</span>
                 <span class="kd">super</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">up</span><span class="o">);</span>
                 <span class="n">up</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
 
-                <span class="c1">// Send a &#39;DOWN&#39; event to the panel.</span>
-                <span class="n">ev</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">);</span>
+                <span class="c1">// Send a 'DOWN' event to the panel.
+</span>
+                <span class="n">ev</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">);</span>
             <span class="o">}</span>
 
             <span class="n">isChildHandlingTouch</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
             <span class="k">return</span> <span class="k">this</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
 
         <span class="o">}</span>
-        <span class="c1">// Dragging Up</span>
+        <span class="c1">// Dragging Up
+</span>
          <span class="k">else</span> <span class="nf">if</span> <span class="o">(</span><span class="n">dy</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-            <span class="c1">// If panel is not fully expanded,we will handle drag here</span>
+            <span class="c1">// If panel is not fully expanded,we will handle drag here
+</span>
             <span class="k">if</span> <span class="o">(</span><span class="n">mSlideOffset</span> <span class="o">&lt;</span> <span class="mf">1.0f</span><span class="o">)</span> <span class="o">{</span>
                 <span class="n">isChildHandlingTouch</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
                 <span class="k">return</span> <span class="k">this</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
             <span class="o">}</span>
 
-            <span class="c1">// If the panel was handling touch previously</span>
-            <span class="c1">// Then we need to rearrange things so that the child gets a proper down event.</span>
+            <span class="c1">// If the panel was handling touch previously
+</span>
+            <span class="c1">// Then we need to rearrange things so that the child gets a proper down event.
+</span>
             <span class="k">if</span> <span class="o">(!</span><span class="n">isChildHandlingTouch</span><span class="o">)</span> <span class="o">{</span>
                 <span class="n">mDragHelper</span><span class="o">.</span><span class="na">cancel</span><span class="o">();</span>
-                <span class="n">ev</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">);</span>
+                <span class="n">ev</span><span class="o">.</span><span class="na">setAction</span><span class="o">(</span><span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">);</span>
             <span class="o">}</span>
 
             <span class="n">isChildHandlingTouch</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
             <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
         <span class="o">}</span>
-    <span class="o">}</span> <span class="k">else</span> <span class="nf">if</span> <span class="o">((</span><span class="n">action</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_CANCEL</span><span class="o">)</span> <span class="o">||</span>
-            <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">))</span> <span class="o">{</span>
+    <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">((</span><span class="n">action</span> <span class="o">==</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_CANCEL</span><span class="o">)</span> <span class="o">||</span>
+            <span class="o">(</span><span class="n">action</span> <span class="o">==</span> <span class="nc">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">))</span> <span class="o">{</span>
         <span class="k">if</span> <span class="o">(!</span><span class="n">isChildHandlingTouch</span><span class="o">)</span> <span class="o">{</span>
             <span class="kd">final</span> <span class="kt">float</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mInitialMotionX</span><span class="o">;</span>
             <span class="kd">final</span> <span class="kt">float</span> <span class="n">dy</span> <span class="o">=</span> <span class="n">y</span> <span class="o">-</span> <span class="n">mInitialMotionY</span><span class="o">;</span>
@@ -276,22 +299,24 @@ Add this method to <code>SlidingUpPanelLayout.java</code>-</p>
     <span class="o">}</span>
 
     <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">dispatchTouchEvent</span><span class="o">(</span><span class="n">ev</span><span class="o">);</span>
-<span class="o">}</span></code></pre></div>
+<span class="o">}</span>
+   </code></pre></figure>
 
 <p>That’s it! We just need to set our scrollingView to the SlidingUpPanelLayout.
    Add this line to give the sliding layout the reference to our RecyclerView.</p>
 
-<div class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">mSlidingPanelLayout</span><span class="o">.</span><span class="na">setScrollingView</span><span class="o">(</span><span class="n">mRecyclerView</span><span class="o">);</span></code></pre></div>
+<figure class="highlight"><pre><code class="language-java" data-lang="java">   <span class="n">mSlidingPanelLayout</span><span class="o">.</span><span class="na">setScrollingView</span><span class="o">(</span><span class="n">mRecyclerView</span><span class="o">);</span>
+   </code></pre></figure>
 
 <p>This should solve the scrolling problem when using RecyclerView with AndoridSlidingUpPanel.</p>
 
-<p>I also made a quick gist of modified <code>SlidingUpPanelLayout.java</code> -<a href="https://gist.github.com/naman14/35d899ab45bf3ce836a8">https://gist.github.com/naman14/35d899ab45bf3ce836a8</a></p>
+<p>I also made a quick gist of modified <code class="highlighter-rouge">SlidingUpPanelLayout.java</code> -<a href="https://gist.github.com/naman14/35d899ab45bf3ce836a8">https://gist.github.com/naman14/35d899ab45bf3ce836a8</a></p>
 
 <hr />
 <blockquote>
   <h4 id="update">Update</h4>
   <p>As of version 3.1.0 released on 19 July,AndroidSlidingUpPanel has added
-<code>scrollableView</code> to support nested scrolling in children
+<code class="highlighter-rouge">scrollableView</code> to support nested scrolling in children
 but only scrollview and listview are supported for now.
 <a href="https://github.com/umano/AndroidSlidingUpPanel/pull/503">https://github.com/umano/AndroidSlidingUpPanel/pull/503</a>.</p>
 
@@ -300,21 +325,21 @@ but only scrollview and listview are supported for now.
 
 <hr />
 
-<p><strong>Posted by <code>Naman Dwivedi</code> on <code>03 July 2015</code></strong></p>
+<p><strong>Posted by <code class="highlighter-rouge">Naman Dwivedi</code> on <code class="highlighter-rouge">03 July 2015</code></strong></p>
 
-<p><strong>Tags-   <code>Android</code>  ,<code>UI</code>  ,<code>AndroidSlidingUpPanel</code></strong></p>
+<p><strong>Tags-   <code class="highlighter-rouge">Android</code>  ,<code class="highlighter-rouge">UI</code>  ,<code class="highlighter-rouge">AndroidSlidingUpPanel</code></strong></p>
 
   <div class="social-share">
   <h4>Share on</h4>
   <ul>
     <li>
-      <a href="https://twitter.com/intent/tweet?text=http://naman-dwivedi.in/slidinguppanel-recyclerview" class="twitter" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+      <a href="https://twitter.com/intent/tweet?text=http://localhost:4000/slidinguppanel-recyclerview" class="twitter" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
     </li>
     <li>
-      <a href="https://www.facebook.com/sharer/sharer.php?u=http://naman-dwivedi.in/slidinguppanel-recyclerview" class="facebook" title="Share on Facebook"><i class="fa fa-facebook"></i><span> Facebook</span></a>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:4000/slidinguppanel-recyclerview" class="facebook" title="Share on Facebook"><i class="fa fa-facebook"></i><span> Facebook</span></a>
     </li>
     <li>
-      <a href="https://plus.google.com/share?url=http://naman-dwivedi.in/slidinguppanel-recyclerview" class="google-plus" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+      <a href="https://plus.google.com/share?url=http://localhost:4000/slidinguppanel-recyclerview" class="google-plus" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
     </li>
   </ul>
 </div><!-- /.social-share -->
@@ -324,7 +349,7 @@ but only scrollview and listview are supported for now.
 
 
 
-        
+
         
 
 <div id="disqus_thread"></div>
@@ -344,25 +369,21 @@ but only scrollview and listview are supported for now.
 
 
     </div>
-    
+
     <div class="wrapper-footer">
         <div class="container">
             <footer class="footer">
                 <a href="mailto:namandwivedi14@gmail.com"><i class="svg-icon email"></i></a>
-<a href="https://www.facebook.com/naman.dwivedi.10"><i class="svg-icon facebook"></i></a>
 
 <a href="https://github.com/naman14"><i class="svg-icon github"></i></a>
 <a href="https://in.linkedin.com/pub/naman-dwivedi/aa/756/291"><i class="svg-icon linkedin"></i></a>
 
-
 <a href="https://twitter.com/naman1405"><i class="svg-icon twitter"></i></a>
 
-
-<a href="https://plus.google.com/+NamanDwivedi14"><i class="svg-icon googleplus"></i></a>
             </footer>
             <footer class="footer">
-                <span>&copy; 2015 Naman Dwivedi. Powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> and hosted on <a href="https://pages.github.com/" rel="nofollow">Github Pages.</a></span>
-                
+                <span>&copy; 2020 Naman Dwivedi. Powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> and hosted on <a href="https://pages.github.com/" rel="nofollow">Github Pages.</a></span>
+
             </footer>
         </div>
     </div>

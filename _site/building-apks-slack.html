@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60857131-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-60857131-4');
+</script>
+
+  <meta charset="UTF-8">
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      Building APKs from Slack using Circle CI and Firebase cloud functions &middot; Naman Dwivedi
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/styles.css">
+
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="Naman Dwivedi" href="/atom.xml">
+
+</head>
+
+
+<body>
+    <div class="wrapper-masthead">
+        <div class="container">
+            <header class="masthead clearfix">
+
+                <div class="site-info">
+                    <h1 class="site-name"><a href="https://namand.in">Naman Dwivedi</a></h1>
+                    <p class="site-description">naman14</p>
+                </div>
+                
+                <nav>
+                    <a href="https://namand.in">Home</a>
+                    <a href="https://blog.namand.in">Blog</a>
+                </nav>
+            </header>
+        </div>
+    </div>
+
+    <div id="main" role="main" class="container">
+        <article class="post">
+  <h1 class="post-title">Building APKs from Slack using Circle CI and Firebase cloud functions</h1>
+  <time datetime="2020-04-13T00:00:00+05:30" class="post-date">13 Apr 2020</time>
+  <p>For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone from can trigger the build from Slack for a branch and build variant.</p>
+
+<hr />
+
+<h3 id="build-apk-branch-or-buildvariantbranch"><code class="highlighter-rouge">/build-apk [branch] or [buildVariant]|[branch]</code></h3>
+
+<p><img src="/assets/slack_build_apk.png" alt="alt text" /></p>
+
+<hr />
+
+<p>The whole process will look like this:</p>
+
+<ul>
+  <li>Slack app and a <a href="https://api.slack.com/interactivity/slash-commands">slash command</a> that triggers the build</li>
+  <li>Receiving POST request from the Slack app with the command details. If your project uses Firebase, this can be a simple Firebase Cloud Function.</li>
+  <li>Triggering the build on Circle CI according to branch and build variant</li>
+  <li>Uploading the artifcat from Circle CI back to Slack</li>
+</ul>
+
+<hr />
+
+<h3 id="build-apk-slash-command"><code class="highlighter-rouge">/build-apk</code> slash command.</h3>
+
+<p>Create a new Slack app and setup a slack command as below -</p>
+
+<p><img src="/assets/slack_slash_command.png" alt="alt text" /></p>
+
+<p>Slack will send a HTTP POST request to the Request URL mentioned when creating the Slash command. We can enter the url for the firebase cloud function here.</p>
+
+<h3 id="firebase-cloud-function-that-handles-the-slack-command-request-and-triggers-circle-ci-job">Firebase cloud function that handles the Slack command request and triggers Circle CI job</h3>
+
+<p>If your project uses Firebase, you can create the cloud function in your Android project repo itself. Run <code class="highlighter-rouge">firebase login</code> and <code class="highlighter-rouge">firebase init functions</code> in your project directory.</p>
+
+<p>Let’s setup the function to recieve POST request and trigger build on Circle CI using Circle CI API trigger.</p>
+
+<p>Note that there are some issues in firebase cloud function working with unescaped characters due to which we are avoiding using space in the slash command. We can use pipe <code class="highlighter-rouge">|</code> as the separator for build variant and branch name as branch names can often have <code class="highlighter-rouge">/</code> or <code class="highlighter-rouge">-</code>.</p>
+
+<p>One thing to note here is that Slack expects a response within 300ms after executing slash command or else it will show <code class="highlighter-rouge">operation_tiemout</code> error. Initialising the function might takes more than 300ms and then waiting for Circle ci api trigger response will certaintly cross 300ms time limit. To work around this, we write the response instantly <code class="highlighter-rouge">response.write()</code> and then trigger the Circle CI API in response of which we finally end the response. Note that if you instantly end the response with <code class="highlighter-rouge">res.end()</code> the cloud function will terminate soon after so we can’t do <code class="highlighter-rouge">response.send()</code> or <code class="highlighter-rouge">response.end()</code>
+before the circle ci api trigger is complete.</p>
+
+<p>Also see Circle CI- <a href="https://circleci.com/docs/2.0/api-job-trigger/">Using the API to trigger jobs</a></p>
+
+<h4 id="srcindexts">src/index.ts</h4>
+
+<figure class="highlight"><pre><code class="language-typescript" data-lang="typescript"><span class="k">import</span> <span class="o">*</span> <span class="k">as</span> <span class="nx">functions</span> <span class="k">from</span> <span class="dl">'</span><span class="s1">firebase-functions</span><span class="dl">'</span><span class="p">;</span>
+<span class="k">import</span> <span class="nx">https</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="dl">'</span><span class="s1">https</span><span class="dl">'</span><span class="p">);</span>
+
+<span class="kd">const</span> <span class="nx">CIRCLECI_API_TOKEN</span> <span class="o">=</span> <span class="dl">"</span><span class="s2">your_circleci_api_token</span><span class="dl">"</span>
+
+<span class="k">export</span> <span class="kd">const</span> <span class="nx">buildApk</span> <span class="o">=</span> <span class="nx">functions</span><span class="p">.</span><span class="nx">https</span><span class="p">.</span><span class="nx">onRequest</span><span class="p">((</span><span class="nx">request</span><span class="p">,</span> <span class="nx">response</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+
+    <span class="kd">const</span> <span class="nx">user</span> <span class="o">=</span> <span class="nx">request</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">user_name</span>
+
+    <span class="kd">let</span> <span class="nx">variant</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">debugRelease</span><span class="dl">'</span> <span class="c1">// default buil variant</span>
+    <span class="kd">let</span> <span class="nx">branch</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">master</span><span class="dl">'</span> <span class="c1">// default branch</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nx">request</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">includes</span><span class="p">(</span><span class="dl">'</span><span class="s1">|</span><span class="dl">'</span><span class="p">))</span> <span class="p">{</span>
+        <span class="c1">// both variant and branch are present</span>
+        <span class="nx">variant</span> <span class="o">=</span> <span class="nx">request</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="dl">"</span><span class="s2">|</span><span class="dl">"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="nx">branch</span> <span class="o">=</span> <span class="nx">request</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="dl">"</span><span class="s2">|</span><span class="dl">"</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="c1">// only branch is present and we use default variant</span>
+        <span class="nx">branch</span> <span class="o">=</span> <span class="nx">request</span><span class="p">.</span><span class="nx">body</span><span class="p">.</span><span class="nx">text</span>
+    <span class="p">}</span>
+
+    <span class="c1">// response to be sent back to Slack after executing command</span>
+    <span class="kd">const</span> <span class="nx">responseString</span> <span class="o">=</span> <span class="s2">`Build started by *</span><span class="p">${</span><span class="nx">user</span><span class="p">}</span><span class="s2">*-\nBranch: </span><span class="p">${</span><span class="nx">branch</span><span class="p">}</span><span class="s2">\nVariant: </span><span class="p">${</span><span class="nx">variant</span><span class="p">}</span><span class="s2">`</span>
+    
+    <span class="nx">response</span><span class="p">.</span><span class="nx">writeHead</span><span class="p">(</span><span class="mi">200</span><span class="p">,</span> <span class="p">{</span><span class="dl">'</span><span class="s1">Content-type</span><span class="dl">'</span><span class="p">:</span> <span class="dl">'</span><span class="s1">application/json</span><span class="dl">'</span><span class="p">})</span>
+    <span class="nx">response</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="s2">`{"response_type": "in_channel","text": "</span><span class="p">${</span><span class="nx">responseString</span><span class="p">}</span><span class="s2">"}`</span><span class="p">);</span>
+
+    <span class="kd">let</span> <span class="nx">job</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">debug-build</span><span class="dl">'</span> <span class="c1">// default circle ci job</span>
+
+    <span class="c1">// set jobs for different variants</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">variant</span> <span class="o">==</span> <span class="dl">'</span><span class="s1">debugRelease</span><span class="dl">'</span><span class="p">)</span> <span class="nx">job</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">debug-release-build</span><span class="dl">'</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nx">variant</span> <span class="o">==</span> <span class="dl">'</span><span class="s1">release</span><span class="dl">'</span><span class="p">)</span> <span class="nx">job</span> <span class="o">=</span> <span class="dl">'</span><span class="s1">release-build</span><span class="dl">'</span>
+
+    <span class="kd">const</span> <span class="nx">data</span> <span class="o">=</span> <span class="nx">JSON</span><span class="p">.</span><span class="nx">stringify</span><span class="p">({</span>
+        <span class="dl">"</span><span class="s2">build_parameters</span><span class="dl">"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="dl">"</span><span class="s2">CIRCLE_JOB</span><span class="dl">"</span><span class="p">:</span> <span class="nx">job</span>
+        <span class="p">}</span>
+    <span class="p">})</span>
+
+    <span class="kd">const</span> <span class="nx">options</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="na">hostname</span><span class="p">:</span> <span class="dl">'</span><span class="s1">circleci.com</span><span class="dl">'</span><span class="p">,</span>
+        <span class="na">path</span><span class="p">:</span> <span class="s2">`/api/v1.1/project/bitbucket/org/project/tree/</span><span class="p">${</span><span class="nx">branch</span><span class="p">}</span><span class="s2">`</span><span class="p">,</span>
+        <span class="na">method</span><span class="p">:</span> <span class="dl">'</span><span class="s1">POST</span><span class="dl">'</span><span class="p">,</span>
+        <span class="na">headers</span><span class="p">:</span> <span class="p">{</span>
+          <span class="dl">'</span><span class="s1">Content-Type</span><span class="dl">'</span><span class="p">:</span> <span class="dl">'</span><span class="s1">application/json</span><span class="dl">'</span><span class="p">,</span>
+          <span class="dl">'</span><span class="s1">Content-Length</span><span class="dl">'</span><span class="p">:</span> <span class="nx">data</span><span class="p">.</span><span class="nx">length</span><span class="p">,</span>
+          <span class="dl">'</span><span class="s1">Authorization</span><span class="dl">'</span><span class="p">:</span> <span class="dl">'</span><span class="s1">Basic </span><span class="dl">'</span> <span class="o">+</span> <span class="k">new</span> <span class="nx">Buffer</span><span class="p">(</span><span class="nx">CIRCLECI_API_TOKEN</span> <span class="o">+</span> <span class="dl">'</span><span class="s1">:</span><span class="dl">'</span><span class="p">).</span><span class="nx">toString</span><span class="p">(</span><span class="dl">'</span><span class="s1">base64</span><span class="dl">'</span><span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+    <span class="kd">const</span> <span class="nx">req</span> <span class="o">=</span> <span class="nx">https</span><span class="p">.</span><span class="nx">request</span><span class="p">(</span><span class="nx">options</span><span class="p">,</span> <span class="p">(</span><span class="nx">res</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+        <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">`statusCode: </span><span class="p">${</span><span class="nx">res</span><span class="p">.</span><span class="nx">statusCode</span><span class="p">}</span><span class="s2">`</span><span class="p">)</span>
+      
+        <span class="nx">res</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="dl">'</span><span class="s1">data</span><span class="dl">'</span><span class="p">,</span> <span class="p">(</span><span class="nx">d</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+            <span class="nx">response</span><span class="p">.</span><span class="nx">end</span><span class="p">()</span>
+        <span class="p">})</span>
+    <span class="p">})</span>
+      
+    <span class="nx">req</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="dl">'</span><span class="s1">error</span><span class="dl">'</span><span class="p">,</span> <span class="p">(</span><span class="nx">error</span><span class="p">)</span> <span class="o">=&gt;</span> <span class="p">{</span>
+          <span class="nx">response</span><span class="p">.</span><span class="nx">end</span><span class="p">()</span>
+    <span class="p">})</span>
+      
+    <span class="nx">req</span><span class="p">.</span><span class="nx">write</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span>
+    <span class="nx">req</span><span class="p">.</span><span class="nx">end</span><span class="p">()</span>
+<span class="p">});</span></code></pre></figure>
+
+<h3 id="circle-ci-config-for-building-apks-and-uploading-to-slack">Circle CI config for building APKs and uploading to Slack</h3>
+
+<figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="na">version</span><span class="pi">:</span> <span class="m">2.1</span>
+
+<span class="na">jobs</span><span class="pi">:</span>
+
+  <span class="na">build</span><span class="pi">:</span> <span class="c1"># this can be your default job for running tests</span>
+    <span class="na">working_directory</span><span class="pi">:</span> <span class="s">~/code</span>
+    <span class="na">docker</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">image</span><span class="pi">:</span> <span class="s">circleci/android:api-28-alpha</span>
+        
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">checkout</span>
+      <span class="pi">-</span> <span class="na">restore_cache</span><span class="pi">:</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">jars--</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span> <span class="c1"># separate step to be able to cache the dependencies depending on build.gradle</span>
+          <span class="na">name</span><span class="pi">:</span> <span class="s">Downloading Dependencies</span>
+          <span class="na">command</span><span class="pi">:</span> <span class="s">./gradlew androidDependencies</span>
+      <span class="pi">-</span> <span class="na">save_cache</span><span class="pi">:</span>
+          <span class="na">paths</span><span class="pi">:</span>
+            <span class="pi">-</span> <span class="s">~/.gradle</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">jars--</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span> 
+          <span class="na">name</span><span class="pi">:</span> <span class="s">Run unit tests</span>
+          <span class="na">command</span><span class="pi">:</span> <span class="s">./gradlew :app:testDebugUnitTest :data:testDebugUnitTest :domain:testDebugUnitTest</span>
+  
+
+  <span class="na">debug-build</span><span class="pi">:</span> <span class="c1"># job to create debug build variant</span>
+    <span class="na">working_directory</span><span class="pi">:</span> <span class="s">~/code</span>
+    <span class="na">docker</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">image</span><span class="pi">:</span> <span class="s">circleci/android:api-28-alpha</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">checkout</span>
+      <span class="pi">-</span> <span class="na">restore_cache</span><span class="pi">:</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">jars--</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span> <span class="c1"># separate step to be able to cache the dependencies depending on build.gradle</span>
+          <span class="na">name</span><span class="pi">:</span> <span class="s">Downloading Dependencies</span>
+          <span class="na">command</span><span class="pi">:</span> <span class="s">./gradlew androidDependencies</span>
+      <span class="pi">-</span> <span class="na">save_cache</span><span class="pi">:</span>
+          <span class="na">paths</span><span class="pi">:</span>
+            <span class="pi">-</span> <span class="s">~/.gradle</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">jars--</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span> 
+          <span class="na">name</span><span class="pi">:</span> <span class="s">Building APK</span>
+          <span class="na">command</span><span class="pi">:</span> <span class="s">./gradlew :app:assembleDebug</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span>
+            <span class="na">name</span><span class="pi">:</span> <span class="s">Upload to Slack</span>
+            <span class="na">command</span><span class="pi">:</span> <span class="s">curl -F file=@$(find app/build/outputs/apk/debug -name 'app-debug*') -F channels=qa-android -F token=$SLACK_TOKEN -F filename=$(find app/build/outputs/apk/debug -name 'app-debug*' -exec basename {} \;)  https://slack.com/api/files.upload</span>
+
+           
+  <span class="na">debug-release-build</span><span class="pi">:</span> <span class="c1"># job to create debugRelease build variant</span>
+    <span class="na">working_directory</span><span class="pi">:</span> <span class="s">~/code</span>
+    <span class="na">docker</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="na">image</span><span class="pi">:</span> <span class="s">circleci/android:api-28-alpha</span>
+    <span class="na">steps</span><span class="pi">:</span>
+      <span class="pi">-</span> <span class="s">checkout</span>
+      <span class="pi">-</span> <span class="na">restore_cache</span><span class="pi">:</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">jars--</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span> <span class="c1"># separate step to be able to cache the dependencies depending on build.gradle</span>
+          <span class="na">name</span><span class="pi">:</span> <span class="s">Downloading Dependencies</span>
+          <span class="na">command</span><span class="pi">:</span> <span class="s">./gradlew androidDependencies</span>
+      <span class="pi">-</span> <span class="na">save_cache</span><span class="pi">:</span>
+          <span class="na">paths</span><span class="pi">:</span>
+            <span class="pi">-</span> <span class="s">~/.gradle</span>
+          <span class="na">key</span><span class="pi">:</span> <span class="s">jars--</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span>
+          <span class="na">name</span><span class="pi">:</span> <span class="s">Building APK</span>
+          <span class="na">command</span><span class="pi">:</span> <span class="s">./gradlew :app:assembleDebugRelease</span>
+      <span class="pi">-</span> <span class="na">run</span><span class="pi">:</span>
+            <span class="na">name</span><span class="pi">:</span> <span class="s">Upload to Slack</span>
+            <span class="na">command</span><span class="pi">:</span> <span class="s">curl -F file=@$(find app/build/outputs/apk/debugRelease -name 'app-debugRelease*') -F channels=qa-android -F token=$SLACK_TOKEN -F filename=$(find app/build/outputs/apk/debugRelease -name 'app-debugRelease*' -exec basename {} \;)  https://slack.com/api/files.upload</span></code></pre></figure>
+
+<p>Circle CI config will be your existing config with an extra step for uploading generated artifact to Slack. We can run following CURL to upload file to Slack -</p>
+
+<p><code class="highlighter-rouge">curl -F file=@app/build/outputs/apk/debug/app-debug.apk -F channels=qa-android -F token=$SLACK_TOKEN -F filename=app-debug.apk  https://slack.com/api/files.upload</code></p>
+
+<p>If your gradle configuration updates the output apk name according to current branch and version like <code class="highlighter-rouge">app-debug-v7.8.50-master.apk</code>, then you will need to slightly change the final step to find the newly built apk.</p>
+
+<p>filePath = <code class="highlighter-rouge">$(find app/build/outputs/apk/debug -name 'app-debug*')</code></p>
+
+<p>fileName = <code class="highlighter-rouge">$(find app/build/outputs/apk/debug -name 'app-debug*' -exec basename {} \;)</code></p>
+
+<p>That’s it! Now you can get the APKs by just running the <code class="highlighter-rouge">build-apk</code> command from Slack.</p>
+
+<h3 id="notes">Notes</h3>
+
+<ul>
+  <li>You should be using a debug keystore that is included in your repository so that your APK can be signed</li>
+</ul>
+
+<figure class="highlight"><pre><code class="language-gradle" data-lang="gradle"><span class="n">signingConfigs</span> <span class="o">{</span>
+    <span class="n">debug</span> <span class="o">{</span>
+        <span class="n">keyAlias</span> <span class="s1">'androiddebugkey'</span>
+        <span class="n">keyPassword</span> <span class="n">DEBUG_KEY_PASSWORD</span>
+        <span class="n">storeFile</span> <span class="nf">file</span><span class="o">(</span><span class="n">project</span><span class="o">.</span><span class="na">rootDir</span><span class="o">.</span><span class="na">path</span> <span class="o">+</span> <span class="s1">'/debug.keystore'</span><span class="o">)</span>
+        <span class="n">storePassword</span> <span class="n">DEBUG_KEYSTORE_PASSWORD</span>
+    <span class="o">}</span>
+<span class="o">}</span>
+
+<span class="n">buildTypes</span> <span class="o">{</span>
+    <span class="n">debug</span> <span class="o">{</span>
+        <span class="n">signingConfig</span> <span class="n">signingConfigs</span><span class="o">.</span><span class="na">debug</span>
+    <span class="o">}</span>
+<span class="o">}</span></code></pre></figure>
+
+<ul>
+  <li>
+    <p>For building release APK, you will probably need to put the release keystore inside your repo itself and then set the store passwords in environment variables in Circle CI. Unfortunately, it looks like Circle CI doesn’t have access to environment variables if job is triggered through API and this may not be the ideal way for building release APKs</p>
+  </li>
+  <li>
+    <p>If using firebase cloud function, you will see frequent operation_timeout error on the slash command due to Slack’s 300ms response time limit, but the function would still have been executed (if there are no errors in the function itself) and the build would have been triggered on Circle CI</p>
+  </li>
+  <li>
+    <p>All the 3 steps can be replaced with some other comibination of services. Instead of Circle CI, you might use Travis CI which should also have similar API triggers. Instead of Slack to initiate build, you can have some other form of trigger that can directly call Circle CI API to start the build.</p>
+  </li>
+</ul>
+
+<hr />
+
+<p><strong>Posted by <code class="highlighter-rouge">Naman Dwivedi</code> on <code class="highlighter-rouge">13 Apr 2020</code></strong></p>
+
+<p><strong>Tags-   <code class="highlighter-rouge">Android</code> ,<code class="highlighter-rouge">Circle CI</code>, <code class="highlighter-rouge">Slack</code>, <code class="highlighter-rouge">APK</code></strong></p>
+
+  <div class="social-share">
+  <h4>Share on</h4>
+  <ul>
+    <li>
+      <a href="https://twitter.com/intent/tweet?text=http://localhost:4000/building-apks-slack" class="twitter" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+    </li>
+    <li>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:4000/building-apks-slack" class="facebook" title="Share on Facebook"><i class="fa fa-facebook"></i><span> Facebook</span></a>
+    </li>
+    <li>
+      <a href="https://plus.google.com/share?url=http://localhost:4000/building-apks-slack" class="google-plus" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+    </li>
+  </ul>
+</div><!-- /.social-share -->
+
+  <hr>
+</article>
+
+
+
+
+        
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'naman14';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+     var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+     dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+    </script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+    </div>
+
+    <div class="wrapper-footer">
+        <div class="container">
+            <footer class="footer">
+                <a href="mailto:namandwivedi14@gmail.com"><i class="svg-icon email"></i></a>
+
+<a href="https://github.com/naman14"><i class="svg-icon github"></i></a>
+<a href="https://in.linkedin.com/pub/naman-dwivedi/aa/756/291"><i class="svg-icon linkedin"></i></a>
+
+<a href="https://twitter.com/naman1405"><i class="svg-icon twitter"></i></a>
+
+            </footer>
+            <footer class="footer">
+                <span>&copy; 2020 Naman Dwivedi. Powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> and hosted on <a href="https://pages.github.com/" rel="nofollow">Github Pages.</a></span>
+
+            </footer>
+        </div>
+    </div>
+
+</body>
+</html>

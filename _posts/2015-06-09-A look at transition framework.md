@@ -26,7 +26,7 @@ Animating views between scenes of same activity is pretty easy and is well docum
 Scenes are basically the state of a view hierachy at a particular time.We can have a initial view hierachy(Scene A) when activity is launched and then we can create a different view hierachy(Scene B) and we can tell the transition framework to animate between these two scenes.The scenes can be loaded either from a layout resource file or from a group of views in existing code.
 
 
-##Animating shared elements between activities
+## Animating shared elements between activities
 
 Shared elements are the common views between two activities where we want to apply tranitions.The transition framework will automatically animate changes to the views containing same `android:transitionName` attribute.
 
@@ -51,7 +51,7 @@ We will specify the transition in our theme. Add this attribute to your v21 them
 {% endhighlight %}
 
 
-###res/transition/shared_element.xml
+### res/transition/shared_element.xml
 
 {% highlight xml %}
 <?xml version="1.0" encoding="utf-8"?>
@@ -112,7 +112,7 @@ In the launching activity-
    {% endhighlight %}
 And then in the launched activity we can use `setEnterSharedElementCallback` to properly move the captured bitmap to target view.
 
-##Notes
+## Notes
 
 Transition framework was introduced in API level 19 and was further updated with many new additions in API level 21. Simple scene transitions and activity transitions will work for 19+ however SharedElementCallbacks were introduced in Lollipop. So be sure to check for Build version before using transition framework.
 

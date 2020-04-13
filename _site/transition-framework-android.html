@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+  <!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=UA-60857131-4"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'UA-60857131-4');
+</script>
+
+  <meta charset="UTF-8">
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+
+  <!-- Enable responsiveness on mobile devices-->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+
+  <title>
+    
+      A look at the Transition framework of Android &middot; Naman Dwivedi
+    
+  </title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="/styles.css">
+
+
+  <!-- RSS -->
+  <link rel="alternate" type="application/atom+xml" title="Naman Dwivedi" href="/atom.xml">
+
+</head>
+
+
+<body>
+    <div class="wrapper-masthead">
+        <div class="container">
+            <header class="masthead clearfix">
+
+                <div class="site-info">
+                    <h1 class="site-name"><a href="https://namand.in">Naman Dwivedi</a></h1>
+                    <p class="site-description">naman14</p>
+                </div>
+                
+                <nav>
+                    <a href="https://namand.in">Home</a>
+                    <a href="https://blog.namand.in">Blog</a>
+                </nav>
+            </header>
+        </div>
+    </div>
+
+    <div id="main" role="main" class="container">
+        <article class="post">
+  <h1 class="post-title">A look at the Transition framework of Android</h1>
+  <time datetime="2015-06-09T00:00:00+05:30" class="post-date">09 Jun 2015</time>
+  <p>With all the animations being added in the Google Play apps, I was wondering how they were being used and then I found out the Transition Framework of Android. After looking a little deeper in it, I was able to create the animation being used in the Google play apps.</p>
+
+<p>Here, I will be explaining a liitle about the usage of Transition Framework of Android to create a variety of animations.</p>
+
+<p>First of all,the transition framework can be used in either of the following two ways-</p>
+
+<ul>
+  <li>Animating same views(shared elements) between different activities(fragments)</li>
+  <li>Animate views between scenes of same activity</li>
+</ul>
+
+<p>The transition framework can also be used to animate the whole views  between different activities.An example of creating a explode animation while launching an intent is shown below:</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java"><span class="n">activity</span><span class="o">.</span><span class="na">getInstance</span><span class="o">().</span><span class="na">getWindow</span><span class="o">().</span><span class="na">setExitTransition</span><span class="o">(</span><span class="k">new</span> <span class="nc">Explode</span><span class="o">());</span>
+<span class="nc">ActivityOptions</span> <span class="n">options</span><span class="o">=</span><span class="nc">ActivityOptions</span><span class="o">.</span><span class="na">makeSceneTransitionAnimation</span><span class="o">(</span><span class="n">activity</span><span class="o">.</span><span class="na">getInstance</span><span class="o">());</span>
+<span class="n">context</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intent</span><span class="o">,</span><span class="n">options</span><span class="o">.</span><span class="na">toBundle</span><span class="o">());</span></code></pre></figure>
+
+<p>Animating views between scenes of same activity is pretty easy and is well documented at <a href="http://developer.android.com/training/transitions/index.html">developer.android.com</a>.
+Scenes are basically the state of a view hierachy at a particular time.We can have a initial view hierachy(Scene A) when activity is launched and then we can create a different view hierachy(Scene B) and we can tell the transition framework to animate between these two scenes.The scenes can be loaded either from a layout resource file or from a group of views in existing code.</p>
+
+<h2 id="animating-shared-elements-between-activities">Animating shared elements between activities</h2>
+
+<p>Shared elements are the common views between two activities where we want to apply tranitions.The transition framework will automatically animate changes to the views containing same <code class="highlighter-rouge">android:transitionName</code> attribute.</p>
+
+<p>When launching another activity,specify the views where we want to  perform transition and pass it as a bundle. The launching activity and the launched activity should have common views to perform transition on that pair of views.</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java"> <span class="nc">Intent</span> <span class="n">intent</span><span class="o">=</span><span class="k">new</span> <span class="nc">Intent</span><span class="o">(</span><span class="n">mContext</span><span class="o">,</span> <span class="nc">DetailActivity</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+ <span class="nc">ActivityOptions</span> <span class="n">options</span><span class="o">=</span><span class="nc">ActivityOptions</span><span class="o">.</span><span class="na">makeSceneTransitionAnimation</span><span class="o">(</span><span class="nc">MainActivity</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(),</span> <span class="nc">Pair</span><span class="o">.</span><span class="na">create</span><span class="o">((</span><span class="nc">View</span><span class="o">)</span> <span class="n">cover</span><span class="o">,</span> <span class="s">"coverTransition"</span><span class="o">));</span>
+<span class="n">mContext</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intent</span><span class="o">,</span><span class="n">options</span><span class="o">.</span><span class="na">toBundle</span><span class="o">());</span></code></pre></figure>
+
+<p><code class="highlighter-rouge">cover</code> is the view in the launching activity and <code class="highlighter-rouge">coverTransition</code> is the value of the <code class="highlighter-rouge">android:transitionName</code>.In the launched activity,any view having the same <code class="highlighter-rouge">android:transitionName:"coverTransition"</code> attribute will be where the transition will be applied.</p>
+
+<p>Note that if no custom transition is supplied, the transition framework will apply the <code class="highlighter-rouge">autoTransition</code> which will animate the views in the way framework thinks is best.</p>
+
+<p>Next we will see how to use custom transitions and sharedElementCallbacks to create advanced transition changes to replicate the animations of Google Play Games app.</p>
+
+<p>We will specify the transition in our theme. Add this attribute to your v21 theme</p>
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="nt">&lt;item</span> <span class="na">name=</span><span class="s">"android:windowSharedElementEnterTransition"</span><span class="nt">&gt;</span>@transition/shared_element<span class="nt">&lt;/item&gt;</span></code></pre></figure>
+
+<h3 id="restransitionshared_elementxml">res/transition/shared_element.xml</h3>
+
+<figure class="highlight"><pre><code class="language-xml" data-lang="xml"><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
+<span class="c">&lt;!-- --A set of transitions on two views performed together &lt;!-- --&gt;</span>
+<span class="nt">&lt;transitionSet</span>
+    <span class="na">xmlns:android=</span><span class="s">"http://schemas.android.com/apk/res/android"</span>
+    <span class="na">android:transitionOrdering=</span><span class="s">"together"</span>
+    <span class="na">android:duration=</span><span class="s">"240"</span><span class="nt">&gt;</span>
+
+    <span class="nt">&lt;transitionSet</span>   <span class="nt">&gt;</span>
+    <span class="c">&lt;!-- --A custom transition defined in PlayTransition class &lt;!-- --&gt;</span>
+        <span class="nt">&lt;transition</span>
+            <span class="na">class=</span><span class="s">"com.naman14.playanimations.PlayTransition"</span><span class="nt">/&gt;</span>
+        <span class="nt">&lt;targets&gt;</span>
+         <span class="c">&lt;!-- --If we want to exclude a particular view from the transition &lt;!-- --&gt;</span>
+            <span class="nt">&lt;target</span> <span class="na">android:excludeId=</span><span class="s">"@id/icon"</span> <span class="nt">/&gt;</span> /&gt;
+        <span class="nt">&lt;/targets&gt;</span>
+        <span class="nt">&lt;/transitionSet&gt;</span>
+<span class="c">&lt;!-- --We have left this one upto transition Framework &lt;!-- --&gt;</span>
+    <span class="nt">&lt;autoTransition/&gt;</span>
+
+<span class="nt">&lt;/transitionSet&gt;</span></code></pre></figure>
+
+<p>Launch the intent with passing the ActivityOptions as bundle.</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java"> <span class="nc">Intent</span> <span class="n">intent</span><span class="o">=</span><span class="k">new</span> <span class="nc">Intent</span><span class="o">(</span><span class="n">mContext</span><span class="o">,</span> <span class="nc">DetailActivity</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+ <span class="c1">//Here we are giving two views to the transition framework to animate</span>
+ <span class="nc">ActivityOptions</span> <span class="n">options</span><span class="o">=</span><span class="nc">ActivityOptions</span><span class="o">.</span><span class="na">makeSceneTransitionAnimation</span><span class="o">(</span><span class="nc">MainActivity</span><span class="o">.</span><span class="na">getInstance</span><span class="o">(),</span> <span class="nc">Pair</span><span class="o">.</span><span class="na">create</span><span class="o">((</span><span class="nc">View</span><span class="o">)</span> <span class="n">cover</span><span class="o">,</span> <span class="s">"coverTransition"</span><span class="o">),</span><span class="nc">Pair</span><span class="o">.</span><span class="na">create</span><span class="o">((</span><span class="nc">View</span><span class="o">)</span> <span class="n">icon</span><span class="o">,</span> <span class="s">"iconTransition"</span><span class="o">));</span>
+<span class="n">mContext</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intent</span><span class="o">,</span><span class="n">options</span><span class="o">.</span><span class="na">toBundle</span><span class="o">());</span></code></pre></figure>
+
+<p>Now,our transition will work but we will not get the same effect as the Google Play Games animation. When transition framework applies transition between two views,
+it immediately changes the initial view to the target view before even starting the animation(And probably that will be necessary as it doesn’t actually moves view from one layout to another layout).So if we have a square image view in first activity and a CircularImageView in second activity with same transitionName value and when intent is fired,the square view will already be converted into circular view before even starting the transition and then further changes will be animated.</p>
+
+<p>So if we want to achieve the rquired effect, we will have to save the bitmap before transition starts otherwise there will not be a shrinking effect.</p>
+
+<p>In the launching activity-</p>
+
+<figure class="highlight"><pre><code class="language-java" data-lang="java"> <span class="n">getActivity</span><span class="o">().</span><span class="na">setExitSharedElementCallback</span><span class="o">(</span><span class="k">new</span> <span class="nc">SharedElementCallback</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="nc">Parcelable</span> <span class="nf">onCaptureSharedElementSnapshot</span><span class="o">(</span><span class="nc">View</span> <span class="n">sharedElement</span><span class="o">,</span> <span class="nc">Matrix</span> <span class="n">viewToGlobalMatrix</span><span class="o">,</span> <span class="nc">RectF</span> <span class="n">screenBounds</span><span class="o">)</span> <span class="o">{</span>
+                <span class="kt">int</span> <span class="n">width</span> <span class="o">=</span> <span class="nc">Math</span><span class="o">.</span><span class="na">round</span><span class="o">(</span><span class="n">screenBounds</span><span class="o">.</span><span class="na">width</span><span class="o">());</span>
+                <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="nc">Math</span><span class="o">.</span><span class="na">round</span><span class="o">(</span><span class="n">screenBounds</span><span class="o">.</span><span class="na">height</span><span class="o">());</span>
+                <span class="nc">Bitmap</span> <span class="n">bitmap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">width</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+                    <span class="nc">Matrix</span> <span class="n">matrix</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Matrix</span><span class="o">();</span>
+                    <span class="n">matrix</span><span class="o">.</span><span class="na">set</span><span class="o">(</span><span class="n">viewToGlobalMatrix</span><span class="o">);</span>
+                    <span class="n">matrix</span><span class="o">.</span><span class="na">postTranslate</span><span class="o">(-</span><span class="n">screenBounds</span><span class="o">.</span><span class="na">left</span><span class="o">,</span> <span class="o">-</span><span class="n">screenBounds</span><span class="o">.</span><span class="na">top</span><span class="o">);</span>
+                    <span class="n">bitmap</span> <span class="o">=</span> <span class="nc">Bitmap</span><span class="o">.</span><span class="na">createBitmap</span><span class="o">(</span><span class="n">width</span><span class="o">,</span> <span class="n">height</span><span class="o">,</span> <span class="nc">Bitmap</span><span class="o">.</span><span class="na">Config</span><span class="o">.</span><span class="na">ARGB_8888</span><span class="o">);</span>
+                    <span class="nc">Canvas</span> <span class="n">canvas</span> <span class="o">=</span> <span class="k">new</span> <span class="nc">Canvas</span><span class="o">(</span><span class="n">bitmap</span><span class="o">);</span>
+                    <span class="n">canvas</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span><span class="n">matrix</span><span class="o">);</span>
+                    <span class="n">sharedElement</span><span class="o">.</span><span class="na">draw</span><span class="o">(</span><span class="n">canvas</span><span class="o">);</span>
+                <span class="o">}</span>
+                <span class="k">return</span> <span class="n">bitmap</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">});</span>
+   </code></pre></figure>
+
+<p>And then in the launched activity we can use <code class="highlighter-rouge">setEnterSharedElementCallback</code> to properly move the captured bitmap to target view.</p>
+
+<h2 id="notes">Notes</h2>
+
+<p>Transition framework was introduced in API level 19 and was further updated with many new additions in API level 21. Simple scene transitions and activity transitions will work for 19+ however SharedElementCallbacks were introduced in Lollipop. So be sure to check for Build version before using transition framework.</p>
+
+<p>There is also a library on Github(<a href="https://github.com/andkulikov/transitions-everywhere">Transitions-Everywhere</a>) which is a backport of Transition Framework upto 2.2+</p>
+
+<ul>
+  <li>
+    <p>The custom transition class can be found here- <a href="https://github.com/naman14/PlayAnimations/blob/master/app/src/main/java/com/naman14/playanimations/PlayTransition.java">PlayTransition.java</a></p>
+  </li>
+  <li>
+    <p>The whole project with full code is available on <a href="https://github.com/naman14/PlayAnimations">Github</a></p>
+  </li>
+  <li>
+    <p>A sample apk can be found on <a href="https://play.google.com/store/apps/details?id=com.naman14.playanimations&amp;hl=en">Google Play</a></p>
+  </li>
+</ul>
+
+<hr />
+
+<p><strong>Posted by <code class="highlighter-rouge">Naman Dwivedi</code> on <code class="highlighter-rouge">09 Jun 2015</code></strong></p>
+
+<p><strong>Tags-   <code class="highlighter-rouge">Android</code>  ,<code class="highlighter-rouge">UI</code></strong></p>
+
+  <div class="social-share">
+  <h4>Share on</h4>
+  <ul>
+    <li>
+      <a href="https://twitter.com/intent/tweet?text=http://localhost:4000/transition-framework-android" class="twitter" title="Share on Twitter"><i class="fa fa-twitter"></i><span> Twitter</span></a>
+    </li>
+    <li>
+      <a href="https://www.facebook.com/sharer/sharer.php?u=http://localhost:4000/transition-framework-android" class="facebook" title="Share on Facebook"><i class="fa fa-facebook"></i><span> Facebook</span></a>
+    </li>
+    <li>
+      <a href="https://plus.google.com/share?url=http://localhost:4000/transition-framework-android" class="google-plus" title="Share on Google Plus"><i class="fa fa-google-plus"></i><span> Google+</span></a>
+    </li>
+  </ul>
+</div><!-- /.social-share -->
+
+  <hr>
+</article>
+
+
+
+
+        
+
+<div id="disqus_thread"></div>
+<script type="text/javascript">
+    /* * * CONFIGURATION VARIABLES * * */
+    var disqus_shortname = 'naman14';
+    
+    /* * * DON'T EDIT BELOW THIS LINE * * */
+    (function() {
+     var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+     dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+     (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+     })();
+    </script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript" rel="nofollow">comments powered by Disqus.</a></noscript>
+
+
+
+    </div>
+
+    <div class="wrapper-footer">
+        <div class="container">
+            <footer class="footer">
+                <a href="mailto:namandwivedi14@gmail.com"><i class="svg-icon email"></i></a>
+
+<a href="https://github.com/naman14"><i class="svg-icon github"></i></a>
+<a href="https://in.linkedin.com/pub/naman-dwivedi/aa/756/291"><i class="svg-icon linkedin"></i></a>
+
+<a href="https://twitter.com/naman1405"><i class="svg-icon twitter"></i></a>
+
+            </footer>
+            <footer class="footer">
+                <span>&copy; 2020 Naman Dwivedi. Powered by <a href="http://jekyllrb.com" rel="nofollow">Jekyll</a> and hosted on <a href="https://pages.github.com/" rel="nofollow">Github Pages.</a></span>
+
+            </footer>
+        </div>
+    </div>
+
+</body>
+</html>

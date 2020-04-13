@@ -22,10 +22,10 @@ Timber is heavily focused on design but also have basic features for a Music pla
 
 [Google+ Community](https://plus.google.com/u/0/communities/111029425713454201429)
 
-#Screenshots
-<img src="https://raw.githubusercontent.com/naman14/naman14.github.io/master/assets/timber_screenshot1.png" width="400" height="711" alt="alt text">
-<img src="https://raw.githubusercontent.com/naman14/naman14.github.io/master/assets/timber_screenshot2.png" width="400" height="711" alt="alt text">
-<img src="https://raw.githubusercontent.com/naman14/naman14.github.io/master/assets/timber_screenshot3.png" width="400" height="711" alt="alt text">
-<img src="https://raw.githubusercontent.com/naman14/naman14.github.io/master/assets/timber_screenshot4.png" width="400" height="711" alt="alt text">
-<img src="https://raw.githubusercontent.com/naman14/naman14.github.io/master/assets/timber_screenshot5.png" width="400" height="711" alt="alt text">
-<img src="https://raw.githubusercontent.com/naman14/naman14.github.io/master/assets/timber_screenshot6.png" width="400" height="711" alt="alt text">
+# Screenshots
+<img src="{{ site.baseurl }}/assets/timber_screenshot1.png" width="400" height="711" alt="alt text">
+<img src="{{ site.baseurl }}/assets/timber_screenshot2.png" width="400" height="711" alt="alt text">
+<img src="{{ site.baseurl }}/assets/timber_screenshot3.png" width="400" height="711" alt="alt text">
+<img src="{{ site.baseurl }}/assets/timber_screenshot4.png" width="400" height="711" alt="alt text">
+<img src="{{ site.baseurl }}/assets/timber_screenshot5.png" width="400" height="711" alt="alt text">
+<img src="{{ site.baseurl }}/assets/timber_screenshot6.png" width="400" height="711" alt="alt text">
