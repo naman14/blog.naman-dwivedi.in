@@ -85,6 +85,8 @@
 
 <p>Slack will send a HTTP POST request to the Request URL mentioned when creating the Slash command. We can enter the url for the firebase cloud function here.</p>
 
+<hr />
+
 <h3 id="firebase-cloud-function-that-handles-the-slack-command-request-and-triggers-circle-ci-job">Firebase cloud function that handles the Slack command request and triggers Circle CI job</h3>
 
 <p>If your project uses Firebase, you can create the cloud function in your Android project repo itself. Run <code class="highlighter-rouge">firebase login</code> and <code class="highlighter-rouge">firebase init functions</code> in your project directory.</p>
@@ -165,7 +167,11 @@ before the circle ci api trigger is complete.</p>
     <span class="nx">req</span><span class="p">.</span><span class="nx">end</span><span class="p">()</span>
 <span class="p">});</span></code></pre></figure>
 
+<hr />
+
 <h3 id="circle-ci-config-for-building-apks-and-uploading-to-slack">Circle CI config for building APKs and uploading to Slack</h3>
+
+<h4 id="circleciconfigyml">.circleci/config.yml</h4>
 
 <figure class="highlight"><pre><code class="language-yaml" data-lang="yaml"><span class="na">version</span><span class="pi">:</span> <span class="m">2.1</span>
 
@@ -241,13 +247,17 @@ before the circle ci api trigger is complete.</p>
 
 <p><code class="highlighter-rouge">curl -F file=@app/build/outputs/apk/debug/app-debug.apk -F channels=qa-android -F token=$SLACK_TOKEN -F filename=app-debug.apk  https://slack.com/api/files.upload</code></p>
 
+<p>The Slack token can be found in the OAuth &amp; Permissions section of your app homepage. Note that you will have to give the bot the <code class="highlighter-rouge">files:write</code> and <code class="highlighter-rouge">commands</code> permissions.</p>
+
 <p>If your gradle configuration updates the output apk name according to current branch and version like <code class="highlighter-rouge">app-debug-v7.8.50-master.apk</code>, then you will need to slightly change the final step to find the newly built apk.</p>
 
 <p>filePath = <code class="highlighter-rouge">$(find app/build/outputs/apk/debug -name 'app-debug*')</code></p>
 
 <p>fileName = <code class="highlighter-rouge">$(find app/build/outputs/apk/debug -name 'app-debug*' -exec basename {} \;)</code></p>
 
-<p>That’s it! Now you can get the APKs by just running the <code class="highlighter-rouge">build-apk</code> command from Slack.</p>
+<hr />
+
+<p>That’s it! Now you can get the APKs by just running the <code class="highlighter-rouge">/build-apk</code> command from Slack.</p>
 
 <h3 id="notes">Notes</h3>
 

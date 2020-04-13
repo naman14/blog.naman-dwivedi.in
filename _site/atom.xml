@@ -4,7 +4,7 @@
  <title>Naman Dwivedi</title>
  <link href="http://localhost:4000//atom.xml" rel="self"/>
  <link href="http://localhost:4000/"/>
- <updated>2020-04-13T21:32:59+05:30</updated>
+ <updated>2020-04-13T22:49:29+05:30</updated>
  <id>http://localhost:4000</id>
  <author>
    <name>Naman Dwivedi</name>
@@ -45,6 +45,8 @@
 &lt;p&gt;&lt;img src=&quot;/assets/slack_slash_command.png&quot; alt=&quot;alt text&quot; /&gt;&lt;/p&gt;
 
 &lt;p&gt;Slack will send a HTTP POST request to the Request URL mentioned when creating the Slash command. We can enter the url for the firebase cloud function here.&lt;/p&gt;
+
+&lt;hr /&gt;
 
 &lt;h3 id=&quot;firebase-cloud-function-that-handles-the-slack-command-request-and-triggers-circle-ci-job&quot;&gt;Firebase cloud function that handles the Slack command request and triggers Circle CI job&lt;/h3&gt;
 
@@ -126,7 +128,11 @@ before the circle ci api trigger is complete.&lt;/p&gt;
     &lt;span class=&quot;nx&quot;&gt;req&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nx&quot;&gt;end&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
 &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
 
+&lt;hr /&gt;
+
 &lt;h3 id=&quot;circle-ci-config-for-building-apks-and-uploading-to-slack&quot;&gt;Circle CI config for building APKs and uploading to Slack&lt;/h3&gt;
+
+&lt;h4 id=&quot;circleciconfigyml&quot;&gt;.circleci/config.yml&lt;/h4&gt;
 
 &lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-yaml&quot; data-lang=&quot;yaml&quot;&gt;&lt;span class=&quot;na&quot;&gt;version&lt;/span&gt;&lt;span class=&quot;pi&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2.1&lt;/span&gt;
 
@@ -202,13 +208,17 @@ before the circle ci api trigger is complete.&lt;/p&gt;
 
 &lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;curl -F file=@app/build/outputs/apk/debug/app-debug.apk -F channels=qa-android -F token=$SLACK_TOKEN -F filename=app-debug.apk  https://slack.com/api/files.upload&lt;/code&gt;&lt;/p&gt;
 
+&lt;p&gt;The Slack token can be found in the OAuth &amp;amp; Permissions section of your app homepage. Note that you will have to give the bot the &lt;code class=&quot;highlighter-rouge&quot;&gt;files:write&lt;/code&gt; and &lt;code class=&quot;highlighter-rouge&quot;&gt;commands&lt;/code&gt; permissions.&lt;/p&gt;
+
 &lt;p&gt;If your gradle configuration updates the output apk name according to current branch and version like &lt;code class=&quot;highlighter-rouge&quot;&gt;app-debug-v7.8.50-master.apk&lt;/code&gt;, then you will need to slightly change the final step to find the newly built apk.&lt;/p&gt;
 
 &lt;p&gt;filePath = &lt;code class=&quot;highlighter-rouge&quot;&gt;$(find app/build/outputs/apk/debug -name 'app-debug*')&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;fileName = &lt;code class=&quot;highlighter-rouge&quot;&gt;$(find app/build/outputs/apk/debug -name 'app-debug*' -exec basename {} \;)&lt;/code&gt;&lt;/p&gt;
 
-&lt;p&gt;That’s it! Now you can get the APKs by just running the &lt;code class=&quot;highlighter-rouge&quot;&gt;build-apk&lt;/code&gt; command from Slack.&lt;/p&gt;
+&lt;hr /&gt;
+
+&lt;p&gt;That’s it! Now you can get the APKs by just running the &lt;code class=&quot;highlighter-rouge&quot;&gt;/build-apk&lt;/code&gt; command from Slack.&lt;/p&gt;
 
 &lt;h3 id=&quot;notes&quot;&gt;Notes&lt;/h3&gt;
 

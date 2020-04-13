@@ -34,6 +34,8 @@ Create a new Slack app and setup a slack command as below -
 
 Slack will send a HTTP POST request to the Request URL mentioned when creating the Slash command. We can enter the url for the firebase cloud function here.
 
+------
+
 ### Firebase cloud function that handles the Slack command request and triggers Circle CI job
 
 If your project uses Firebase, you can create the cloud function in your Android project repo itself. Run `firebase login` and `firebase init functions` in your project directory.
@@ -116,7 +118,11 @@ export const buildApk = functions.https.onRequest((request, response) => {
 });
 {% endhighlight %}
 
+------
+
 ### Circle CI config for building APKs and uploading to Slack
+
+#### .circleci/config.yml
 
 {% highlight yaml %}
 
@@ -196,13 +202,17 @@ Circle CI config will be your existing config with an extra step for uploading g
 
 `curl -F file=@app/build/outputs/apk/debug/app-debug.apk -F channels=qa-android -F token=$SLACK_TOKEN -F filename=app-debug.apk  https://slack.com/api/files.upload`
 
+The Slack token can be found in the OAuth & Permissions section of your app homepage. Note that you will have to give the bot the `files:write` and `commands` permissions.
+
 If your gradle configuration updates the output apk name according to current branch and version like `app-debug-v7.8.50-master.apk`, then you will need to slightly change the final step to find the newly built apk.
 
 filePath = `$(find app/build/outputs/apk/debug -name 'app-debug*')`
 
 fileName = `$(find app/build/outputs/apk/debug -name 'app-debug*' -exec basename {} \;)`
 
-That's it! Now you can get the APKs by just running the `build-apk` command from Slack.
+------
+
+That's it! Now you can get the APKs by just running the `/build-apk` command from Slack.
 
 
 ### Notes
