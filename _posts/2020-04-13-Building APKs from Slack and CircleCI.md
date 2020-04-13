@@ -4,9 +4,9 @@ title: Building APKs from Slack using Circle CI and Firebase cloud functions
 comments: true
 related: false
 permalink: building-apks-slack
-excerpt: For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone from can trigger the build from Slack for a branch and build variant.  
+excerpt: For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone can trigger the build from Slack for a branch and build variant.  
 ---
-For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone from can trigger the build from Slack for a branch and build variant.  
+For small teams or small projects, it might not be easy to have full self hosted CI/CD pipelines for building apks. Sharing apks within the team for testing purposes might also be difficult. With a simple Slack app and CircleCI integration in the project, we can have automated apk building and anyone can trigger the build from Slack for a branch and build variant.  
 
 ------
 
@@ -44,7 +44,7 @@ Let's setup the function to recieve POST request and trigger build on Circle CI 
 
 Note that there are some issues in firebase cloud function working with unescaped characters due to which we are avoiding using space in the slash command. We can use pipe `|` as the separator for build variant and branch name as branch names can often have `/` or `-`.
 
-One thing to note here is that Slack expects a response within 300ms after executing slash command or else it will show `operation_tiemout` error. Initialising the function might takes more than 300ms and then waiting for Circle ci api trigger response will certaintly cross 300ms time limit. To work around this, we write the response instantly `response.write()` and then trigger the Circle CI API in response of which we finally end the response. Note that if you instantly end the response with `res.end()` the cloud function will terminate soon after so we can't do `response.send()` or `response.end()`
+One thing to note here is that Slack expects a response within 300ms after executing slash command or else it will show `operation_tiemout` error. Initialising the function might take more than 300ms and then waiting for Circle CI api trigger response will certaintly cross 300ms time limit. To work around this, we write the response instantly using `response.write()` and then trigger the Circle CI API in response of which we finally end the response. Note that if you instantly end the response with `res.end()` the cloud function will terminate soon after so we can't do `response.send()` or `response.end()`
 before the circle ci api trigger is complete.
 
 Also see Circle CI- [Using the API to trigger jobs](https://circleci.com/docs/2.0/api-job-trigger/)
